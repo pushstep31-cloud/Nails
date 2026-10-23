@@ -58,7 +58,6 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
-# ---------- ПРОВЕРКА ПЕРЕСЕЧЕНИЙ ----------
 def check_overlap(day, start, end):
     existing_shifts = get_shifts(day)
     for _, m, _, s, e, _ in existing_shifts:
@@ -66,7 +65,6 @@ def check_overlap(day, start, end):
             return True, f"Пересечение с графиком: {m} уже работает с {s} до {e}."
     return False, ""
 
-# ---------- СЛОТЫ ----------
 def time_slots():
     slots = []
     t = datetime.strptime("00:00", "%H:%M")
@@ -79,11 +77,28 @@ SLOTS = time_slots()
 
 # ---------- ИНТЕРФЕЙС ----------
 st.set_page_config(page_title="График мастеров", page_icon="💅", layout="centered")
-init_db()
 
+# Добавляем CSS-стили, чтобы сделать кнопки белыми
+st.markdown("""
+    <style>
+    /* Делаем фон всех кнопок белым */
+    .stButton > button {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #CCCCCC !important;
+        font-weight: bold !important;
+    }
+    /* Эффект при нажатии (сделаем чуть серым, чтобы было видно клик) */
+    .stButton > button:active, .stButton > button:focus {
+        background-color: #E0E0E0 !important;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+init_db()
 st.title("💅 График мастеров")
 
-# --- ЧТЕНИЕ ЛОГИНА ИЗ ССЫЛКИ (если страница перезагрузилась) ---
+# --- ЧТЕНИЕ ЛОГИНА ИЗ ССЫЛКИ ---
 if "master" not in st.session_state:
     st.session_state.master = None
 
@@ -101,7 +116,7 @@ if st.session_state.master is None:
     if st.button("Войти"):
         if PASSWORDS.get(login) == pwd:
             st.session_state.master = login
-            st.query_params["user"] = login  # Записываем в ссылку
+            st.query_params["user"] = login
             st.rerun()
         else:
             st.error("Неверный пароль")
@@ -112,7 +127,7 @@ st.success(f"Вы вошли как **{master}**")
 
 if st.button("Выйти"):
     st.session_state.master = None
-    st.query_params.clear()  # Очищаем ссылку
+    st.query_params.clear()
     st.rerun()
 
 # --- Добавление смены ---
@@ -160,7 +175,17 @@ today = date.today()
 start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=st.session_state.week_offset)
 end_of_week = start_of_week + timedelta(days=6)
 
-st.caption(f"Неделя: {start_of_week.strftime('%d.%m.%Y')} — {end_of_week.strftime('%d.%m.%Y')}")
+# Делаем надпись недели жирной, крупной и белой (чтобы выделялась)
+st.markdown(
+    f"""
+    <div style="text-align: center; margin-bottom: 20px;">
+        <span style="font-size: 1.3em; font-weight: 800; color: #FFFFFF;">
+            Неделя: {start_of_week.strftime('%d.%m.%Y')} — {end_of_week.strftime('%d.%m.%Y')}
+        </span>
+    </div>
+    """, 
+    unsafe_allow_html=True
+)
 
 days_ru = {"Monday": "Пн", "Tuesday": "Вт", "Wednesday": "Ср", "Thursday": "Чт", "Friday": "Пт", "Saturday": "Сб", "Sunday": "Вс"}
 
@@ -171,7 +196,6 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
-    # Плашки дней
     if current_day == today:
         st.markdown(
             f"""
