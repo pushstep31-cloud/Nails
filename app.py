@@ -86,7 +86,7 @@ st.markdown("""
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        border: 2px solid #FF8DA1 !important; /* Более насыщенный розовый */
+        border: 2px solid #FF8DA1 !important;
         font-weight: bold !important;
         border-radius: 8px !important;
     }
@@ -337,13 +337,13 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
+    # ОБНОВЛЕННАЯ ПЛАШКА "СЕГОДНЯ"
     if current_day == today:
         st.markdown(
-            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#2E7D32; color:white; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.2em;">👉 Сегодня, {day_title}</span></div>', 
+            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:rgba(46, 125, 50, 0.15); color:#1B5E20; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.2em; border: 2px solid #FF8DA1;">👉 Сегодня, {day_title}</span></div>', 
             unsafe_allow_html=True
         )
     else:
-        # Выделение дня теперь имеет такую же рамку, как и всё остальное (2px)
         st.markdown(
             f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#FFFFFF; color:#333333; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.1em; border: 2px solid #FF8DA1;">{day_title}</span></div>', 
             unsafe_allow_html=True
@@ -356,7 +356,6 @@ for i in range(7):
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
-            # Рамка вокруг карточки смены тоже стала такого же розового цвета (2px)
             st.markdown(
                 f"""
                 <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#FFFFFF; border-radius:6px; border-top: 2px solid #FF8DA1; border-right: 2px solid #FF8DA1; border-bottom: 2px solid #FF8DA1;">
@@ -380,5 +379,4 @@ for i in range(7):
                             st.session_state.edit_id = None
                         st.rerun()
     
-    # Пунктирная линия разделения стала чуть насыщеннее и толще (2px)
     st.markdown("<hr style='border: 2px dashed #FF8DA1; margin: 25px 0;'>", unsafe_allow_html=True)
