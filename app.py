@@ -255,4 +255,3 @@ for i in range(7):
                     delete_shift(sid)
                     st.rerun()
     st.divider()
-    
