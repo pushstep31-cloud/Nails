@@ -1,7 +1,6 @@
 import streamlit as st
 import sqlite3
 from datetime import date, datetime, timedelta
-import streamlit.components.v1 as components
 
 # ---------- НАСТРОЙКИ ----------
 PASSWORDS = {
@@ -77,7 +76,6 @@ def check_overlap(day, start, end, exclude_id=None):
 # ---------- CSS СТИЛИ ----------
 st.markdown("""
     <style>
-    /* Стили для обычных кнопок (сохранить, выйти) */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -85,7 +83,6 @@ st.markdown("""
         font-weight: bold !important;
         border-radius: 8px !important;
     }
-    /* Гармошка */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -95,7 +92,6 @@ st.markdown("""
     div[data-testid="stExpander"] summary p { color: #000000 !important; font-weight: bold !important; }
     div[data-testid="stExpander"] summary svg { fill: #000000 !important; }
     
-    /* Зеленая кнопка сохранения */
     .stButton > button[kind="primary"] {
         background-color: #2E7D32 !important;
         color: white !important;
@@ -104,7 +100,6 @@ st.markdown("""
         font-size: 1.1em !important;
     }
     
-    /* Сетка для часов */
     .time-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -192,30 +187,23 @@ with st.expander("➕ Добавить или изменить смену", expa
     
     # --- НАЧАЛО ---
     st.markdown("#### 🕒 Время начала")
-    
-    # Получаем текущие часы и минуты для начала
     start_h, start_m = st.session_state.sel_start.split(":")
     
-    # Генерируем HTML-сетку для часов
     hours_html = '<div class="time-grid">'
-    for h in range(24):
+    # ИЗМЕНЕНИЕ ЗДЕСЬ: range(8, 24) вместо range(24)
+    for h in range(8, 24):
         h_str = f"{h:02d}"
         active_class = " active" if h_str == start_h else ""
-        # Передаем клик через якорную ссылку (query params)
         hours_html += f'<a href="?h_start={h_str}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{h_str}</div></a>'
     hours_html += '</div>'
-    
-    # Выводим сетку
     st.markdown(hours_html, unsafe_allow_html=True)
     
-    # Обработка клика по часам (через URL)
     if "h_start" in st.query_params:
         new_h = st.query_params["h_start"]
         st.session_state.sel_start = f"{new_h}:{start_m}"
-        st.query_params.pop("h_start") # Убираем из ссылки, чтобы не мешало
+        st.query_params.pop("h_start")
         st.rerun()
 
-    # Кнопки минут
     col_m1, col_m2 = st.columns(2)
     if col_m1.button("00 мин", use_container_width=True, key="m_s_0"):
         st.session_state.sel_start = f"{start_h}:00"
@@ -233,12 +221,12 @@ with st.expander("➕ Добавить или изменить смену", expa
     end_h, end_m = st.session_state.sel_end.split(":")
     
     hours_html_end = '<div class="time-grid">'
-    for h in range(24):
+    # ИЗМЕНЕНИЕ ЗДЕСЬ: range(8, 24) вместо range(24)
+    for h in range(8, 24):
         h_str = f"{h:02d}"
         active_class = " active" if h_str == end_h else ""
         hours_html_end += f'<a href="?h_end={h_str}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{h_str}</div></a>'
     hours_html_end += '</div>'
-    
     st.markdown(hours_html_end, unsafe_allow_html=True)
     
     if "h_end" in st.query_params:
