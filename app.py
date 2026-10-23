@@ -8,8 +8,8 @@ PASSWORDS = {
     "Настя": "2222",
 }
 COLORS = {
-    "Диана": "#4A90D9",  # синий
-    "Настя": "#D9534F",  # красный
+    "Диана": "#4A90D9",
+    "Настя": "#D9534F",
 }
 DB = "schedule.db"
 
@@ -81,12 +81,12 @@ st.markdown("""
         background-color: #FFF0F5 !important;
     }
     
-    /* 2. Текст (чтобы был виден на розовом) */
+    /* 2. Общий текст */
     h1, h2, h3, h4, p, span, div {
         color: #333333;
     }
     
-    /* 3. Кнопки */
+    /* 3. Обычные кнопки */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -95,8 +95,36 @@ st.markdown("""
         border-radius: 8px !important;
     }
     
-    /* 4. БЕЛЫЕ ПОЛЯ (Selectbox, Input, Date) */
-    .stSelectbox div[data-baseweb="select"] > div,
+    /* 4. Само поле Selectbox (где написано "Диана") */
+    div[data-baseweb="select"] > div {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #FFB6C1 !important;
+        border-radius: 8px !important;
+    }
+    
+    /* 5. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Выпадающий список (Popover) */
+    div[data-baseweb="popover"] div[data-baseweb="menu"] {
+        background-color: #FFFFFF !important;
+        border: 1px solid #FFB6C1 !important;
+    }
+    div[data-baseweb="popover"] ul {
+        background-color: #FFFFFF !important;
+    }
+    
+    /* Элементы списка (Диана, Настя) */
+    div[data-baseweb="popover"] li {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    
+    /* Наведение на элемент списка (подсветка) */
+    div[data-baseweb="popover"] li:hover {
+        background-color: #FCE4EC !important;
+        color: #000000 !important;
+    }
+
+    /* 6. Поля ввода текста и даты */
     .stTextInput input, .stDateInput input {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -104,33 +132,13 @@ st.markdown("""
         border: 1px solid #FFB6C1 !important;
     }
     
-    /* ИСПРАВЛЕНИЕ ВЫПАДАЮЩЕГО СПИСКА (Dropdown) */
-    div[data-baseweb="popover"] {
-        background-color: #FFFFFF !important;
-    }
-    ul[data-testid="stSelectboxVirtualDropdown"] {
-        background-color: #FFFFFF !important;
-    }
-    li[role="option"] {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
-    }
-    li[role="option"]:hover {
-        background-color: #FCE4EC !important; /* Легкий розовый при наведении */
-        color: #000000 !important;
-    }
-    /* Текст выбранного элемента в выпадающем списке */
-    div[data-baseweb="popover"] div {
-        color: #000000 !important;
-    }
-
-    /* Убираем красную рамку при клике */
+    /* Убираем красную рамку */
     .stTextInput input:focus, .stDateInput input:focus {
         border-color: #FF69B4 !important;
         box-shadow: none !important;
     }
     
-    /* 5. Гармошка */
+    /* 7. Гармошка */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -140,7 +148,7 @@ st.markdown("""
     div[data-testid="stExpander"] summary p { color: #000000 !important; font-weight: bold !important; }
     div[data-testid="stExpander"] summary svg { fill: #000000 !important; }
     
-    /* 6. Зеленая кнопка сохранения */
+    /* 8. Кнопка сохранения */
     .stButton > button[kind="primary"] {
         background-color: #2E7D32 !important;
         color: white !important;
@@ -149,7 +157,7 @@ st.markdown("""
         font-size: 1.1em !important;
     }
     
-    /* 7. Сетка времени */
+    /* 9. Сетка времени */
     .time-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -173,7 +181,7 @@ st.markdown("""
         color: #2E7D32;
     }
     
-    /* 8. ЗЕЛЕНЫЕ ПЛАШКИ ВЫБОРА ВРЕМЕНИ */
+    /* 10. Зеленые плашки времени */
     div[data-testid="stAlert"] {
         background-color: #E8F5E9 !important;
         color: #2E7D32 !important;
@@ -183,15 +191,6 @@ st.markdown("""
     div[data-testid="stAlert"] p {
         color: #2E7D32 !important;
         font-weight: bold !important;
-    }
-    
-    /* 9. Стили для карточек смен */
-    .day-box {
-        background-color: #FFFFFF;
-        padding: 8px 12px;
-        border-radius: 6px;
-        border-left: 6px solid #FFB6C1;
-        margin-bottom: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -250,12 +249,11 @@ if st.session_state.edit_id:
 else:
     btn_text = "💾 Сохранить смену"
 
-# --- Генерация списка всех временных слотов (с 8:00 до 23:30) ---
+# --- СЛОТЫ ВРЕМЕНИ ---
 ALL_TIME_SLOTS = []
 for h in range(8, 24):
     ALL_TIME_SLOTS.append(f"{h:02d}:00")
     ALL_TIME_SLOTS.append(f"{h:02d}:30")
-
 
 # --- ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ ---
 with st.expander("➕ Добавить или изменить смену", expanded=(st.session_state.edit_id is not None)):
@@ -263,15 +261,13 @@ with st.expander("➕ Добавить или изменить смену", expa
     st.session_state.sel_comment = st.text_input("Услуга / Комментарий", value=st.session_state.sel_comment)
     st.session_state.sel_date = st.date_input("Дата смены", value=st.session_state.sel_date)
     
-    # --- НАЧАЛО ---
+    # НАЧАЛО
     st.markdown("#### 🕒 Время начала")
-    
     start_html = '<div class="time-grid">'
     for t in ALL_TIME_SLOTS:
         active_class = " active" if t == st.session_state.sel_start else ""
         start_html += f'<a href="?t_start={t}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{t}</div></a>'
     start_html += '</div>'
-    
     st.markdown(start_html, unsafe_allow_html=True)
     
     if "t_start" in st.query_params:
@@ -282,15 +278,13 @@ with st.expander("➕ Добавить или изменить смену", expa
     st.success(f"Выбрано начало: **{st.session_state.sel_start}**")
     st.write("---")
     
-    # --- КОНЕЦ ---
+    # КОНЕЦ
     st.markdown("#### 🕒 Время окончания")
-    
     end_html = '<div class="time-grid">'
     for t in ALL_TIME_SLOTS:
         active_class = " active" if t == st.session_state.sel_end else ""
         end_html += f'<a href="?t_end={t}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{t}</div></a>'
     end_html += '</div>'
-    
     st.markdown(end_html, unsafe_allow_html=True)
     
     if "t_end" in st.query_params:
@@ -301,7 +295,7 @@ with st.expander("➕ Добавить или изменить смену", expa
     st.success(f"Выбрано окончание: **{st.session_state.sel_end}**")
     st.write("---")
     
-    # --- СОХРАНЕНИЕ ---
+    # СОХРАНЕНИЕ
     if st.button(btn_text, use_container_width=True, type="primary"):
         day_str = st.session_state.sel_date.strftime("%Y-%m-%d")
         if st.session_state.sel_start >= st.session_state.sel_end:
