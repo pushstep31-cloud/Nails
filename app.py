@@ -1,7 +1,6 @@
 import streamlit as st
 import sqlite3
 from datetime import date, datetime, timedelta
-import streamlit.components.v1 as components
 
 # ---------- НАСТРОЙКИ ----------
 PASSWORDS = {
@@ -9,8 +8,8 @@ PASSWORDS = {
     "Мастер 2": "2222",
 }
 COLORS = {
-    "Мастер 1": "#4A90D9",
-    "Мастер 2": "#D9534F",
+    "Мастер 1": "#4A90D9",  # синий
+    "Мастер 2": "#D9534F",  # красный
 }
 DB = "schedule.db"
 
@@ -34,8 +33,10 @@ def init_db():
 def add_shift(master, day, start, end, comment):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    c.execute("INSERT INTO shifts (master, day, start, end, comment) VALUES (?,?,?,?,?)",
-              (master, day, start, end, comment))
+    c.execute(
+        "INSERT INTO shifts (master, day, start, end, comment) VALUES (?,?,?,?,?)",
+        (master, day, start, end, comment),
+    )
     conn.commit()
     conn.close()
 
@@ -57,6 +58,7 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
+# ---------- ПРОВЕРКА ПЕРЕСЕЧЕНИЙ ----------
 def check_overlap(day, start, end):
     existing_shifts = get_shifts(day)
     for _, m, _, s, e, _ in existing_shifts:
@@ -64,6 +66,7 @@ def check_overlap(day, start, end):
             return True, f"Пересечение с графиком: {m} уже работает с {s} до {e}."
     return False, ""
 
+# ---------- СЛОТЫ ----------
 def time_slots():
     slots = []
     t = datetime.strptime("00:00", "%H:%M")
@@ -78,31 +81,18 @@ SLOTS = time_slots()
 st.set_page_config(page_title="График мастеров", page_icon="💅", layout="centered")
 init_db()
 
-# --- ЧТЕНИЕ СЕССИИ ИЗ БРАУЗЕРА ---
-# Этот компонент отправляет сохраненное имя мастера обратно в Streamlit при загрузке
-saved_master = components.html(
-    """
-    <script>
-    const saved = localStorage.getItem("master_login");
-    if (saved) {
-        // Отправляем данные в Streamlit (через костыль с изменением размера фрейма)
-        window.parent.postMessage({type: "streamlit:setComponentValue", value: saved}, "*");
-    }
-    </script>
-    """,
-    height=0,
-)
+st.title("💅 График мастеров")
 
+# --- ЧТЕНИЕ ЛОГИНА ИЗ ССЫЛКИ (если страница перезагрузилась) ---
 if "master" not in st.session_state:
     st.session_state.master = None
 
-# Если в браузере есть сохраненный логин, применяем его
-if saved_master and st.session_state.master is None:
-    st.session_state.master = saved_master
+if st.session_state.master is None and "user" in st.query_params:
+    user_from_url = st.query_params["user"]
+    if user_from_url in PASSWORDS:
+        st.session_state.master = user_from_url
 
-st.title("💅 График мастеров")
-
-# --- Авторизация ---
+# --- АВТОРИЗАЦИЯ ---
 if st.session_state.master is None:
     st.subheader("Вход")
     login = st.selectbox("Кто вы?", ["Мастер 1", "Мастер 2"])
@@ -111,15 +101,7 @@ if st.session_state.master is None:
     if st.button("Войти"):
         if PASSWORDS.get(login) == pwd:
             st.session_state.master = login
-            # Сохраняем в память браузера
-            components.html(
-                f"""
-                <script>
-                localStorage.setItem("master_login", "{login}");
-                </script>
-                """,
-                height=0,
-            )
+            st.query_params["user"] = login  # Записываем в ссылку
             st.rerun()
         else:
             st.error("Неверный пароль")
@@ -130,15 +112,7 @@ st.success(f"Вы вошли как **{master}**")
 
 if st.button("Выйти"):
     st.session_state.master = None
-    # Очищаем память браузера
-    components.html(
-        """
-        <script>
-        localStorage.removeItem("master_login");
-        </script>
-        """,
-        height=0,
-    )
+    st.query_params.clear()  # Очищаем ссылку
     st.rerun()
 
 # --- Добавление смены ---
@@ -197,6 +171,7 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
+    # Плашки дней
     if current_day == today:
         st.markdown(
             f"""
@@ -205,7 +180,8 @@ for i in range(7):
                     👉 Сегодня, {day_title}
                 </span>
             </div>
-            """, unsafe_allow_html=True
+            """, 
+            unsafe_allow_html=True
         )
     else:
         st.markdown(
@@ -215,7 +191,8 @@ for i in range(7):
                     {day_title}
                 </span>
             </div>
-            """, unsafe_allow_html=True
+            """, 
+            unsafe_allow_html=True
         )
     
     day_shifts = get_shifts(current_day_str)
@@ -232,7 +209,8 @@ for i in range(7):
                     <span style="color:#333; font-weight:bold; font-size:1.05em;">{s}–{e}</span>
                     <span style="color:#555; font-size:0.9em;">{(' (' + cm + ')') if cm else ''}</span>
                 </div>
-                """, unsafe_allow_html=True
+                """,
+                unsafe_allow_html=True,
             )
             if m == master:
                 if st.button(f"Удалить {s}–{e}", key=f"del_{sid}"):
