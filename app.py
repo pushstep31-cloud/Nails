@@ -40,6 +40,17 @@ def add_shift(master, day, start, end, comment):
     conn.commit()
     conn.close()
 
+# НОВАЯ ФУНКЦИЯ: Обновление смены
+def update_shift(shift_id, day, start, end, comment):
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute(
+        "UPDATE shifts SET day=?, start=?, end=?, comment=? WHERE id=?",
+        (day, start, end, comment, shift_id),
+    )
+    conn.commit()
+    conn.close()
+
 def get_shifts(day=None):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
@@ -58,9 +69,12 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
-def check_overlap(day, start, end):
+def check_overlap(day, start, end, exclude_id=None):
     existing_shifts = get_shifts(day)
-    for _, m, _, s, e, _ in existing_shifts:
+    for sid, m, _, s, e, _ in existing_shifts:
+        # Если проверяем редактирование, пропускаем саму редактируемую смену
+        if exclude_id is not None and sid == exclude_id:
+            continue
         if (start < e) and (end > s):
             return True, f"Пересечение с графиком: {m} уже работает с {s} до {e}."
     return False, ""
@@ -103,6 +117,14 @@ st.markdown("""
     div[data-testid="stExpander"] summary svg {
         fill: #000000 !important;
     }
+    /* Стиль для главной кнопки сохранения */
+    div[data-testid="stFormSubmitButton"] button {
+        background-color: #2E7D32 !important;
+        color: white !important;
+        font-size: 1.1em !important;
+        height: 50px !important;
+        width: 100% !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -141,30 +163,73 @@ if st.button("Выйти"):
     st.query_params.clear()
     st.rerun()
 
-# --- Добавление смены ---
-with st.expander("➕ Добавить смену", expanded=False):
-    selected_day = st.date_input("Дата смены", value=date.today())
-    day_str = selected_day.strftime("%Y-%m-%d")
+# --- ПЕРЕМЕННЫЕ ДЛЯ РЕДАКТИРОВАНИЯ ---
+if "edit_id" not in st.session_state:
+    st.session_state.edit_id = None
+
+# --- ДОБАВЛЕНИЕ И РЕДАКТИРОВАНИЕ СМЕНЫ ---
+with st.expander("➕ Добавить или изменить смену", expanded=(st.session_state.edit_id is not None)):
     
-    col1, col2 = st.columns(2)
-    with col1:
-        start = st.selectbox("Начало", SLOTS, index=20)
-    with col2:
-        end = st.selectbox("Конец", SLOTS, index=36)
+    # Если мы редактируем, достаем данные текущей смены
+    if st.session_state.edit_id:
+        conn = sqlite3.connect(DB)
+        c = conn.cursor()
+        c.execute("SELECT day, start, end, comment FROM shifts WHERE id=?", (st.session_state.edit_id,))
+        edit_data = c.fetchone()
+        conn.close()
         
-    comment = st.text_input("Комментарий (необязательно)", placeholder="Например: перерыв")
-    
-    if st.button("Сохранить смену"):
-        if start >= end:
-            st.error("Время окончания должно быть позже начала")
-        else:
-            has_overlap, msg = check_overlap(day_str, start, end)
-            if has_overlap:
-                st.error(msg)
+        default_day = datetime.strptime(edit_data[0], "%Y-%m-%d").date()
+        default_start_idx = SLOTS.index(edit_data[1]) if edit_data[1] in SLOTS else 20
+        default_end_idx = SLOTS.index(edit_data[2]) if edit_data[2] in SLOTS else 36
+        default_comment = edit_data[3]
+        btn_text = "💾 Обновить смену"
+    else:
+        default_day = date.today()
+        default_start_idx = 20
+        default_end_idx = 36
+        default_comment = "Педикюр"
+        btn_text = "💾 Сохранить смену"
+
+    with st.form("shift_form"):
+        # 1. Сначала самое важное - Комментарий (Услуга)
+        comment = st.text_input("Услуга / Комментарий", value=default_comment, help="Здесь можно указать услугу или оставить заметку")
+        
+        # 2. Дата
+        selected_day = st.date_input("Дата смены", value=default_day)
+        day_str = selected_day.strftime("%Y-%m-%d")
+        
+        # 3. Время
+        col1, col2 = st.columns(2)
+        with col1:
+            start = st.selectbox("Начало", SLOTS, index=default_start_idx)
+        with col2:
+            end = st.selectbox("Конец", SLOTS, index=default_end_idx)
+            
+        # Кнопка отправки (внутри формы)
+        submitted = st.form_submit_button(btn_text)
+        
+        if submitted:
+            if start >= end:
+                st.error("Время окончания должно быть позже начала")
             else:
-                add_shift(master, day_str, start, end, comment)
-                st.success("Смена добавлена!")
-                st.rerun()
+                has_overlap, msg = check_overlap(day_str, start, end, exclude_id=st.session_state.edit_id)
+                if has_overlap:
+                    st.error(msg)
+                else:
+                    if st.session_state.edit_id:
+                        update_shift(st.session_state.edit_id, day_str, start, end, comment)
+                        st.success("Смена успешно обновлена!")
+                        st.session_state.edit_id = None # Сбрасываем режим редактирования
+                    else:
+                        add_shift(master, day_str, start, end, comment)
+                        st.success("Смена добавлена!")
+                    st.rerun()
+
+    # Кнопка отмены редактирования
+    if st.session_state.edit_id:
+        if st.button("❌ Отменить редактирование"):
+            st.session_state.edit_id = None
+            st.rerun()
 
 # --- ЛИСТАНИЕ НЕДЕЛЬ И КАЛЕНДАРЬ ---
 st.subheader("📅 График на неделю")
@@ -236,6 +301,8 @@ for i in range(7):
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
+            
+            # Выводим информацию о смене
             st.markdown(
                 f"""
                 <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#f4f4f4; border-radius:6px;">
@@ -247,11 +314,17 @@ for i in range(7):
                 unsafe_allow_html=True,
             )
             
-            # ЛОГИКА УДАЛЕНИЯ:
-            # 1. Если это твоя смена (имя совпадает)
-            # 2. ИЛИ если это старая смена (Мастер 1 / Мастер 2) — её может удалить кто угодно
+            # Кнопки управления (Редактировать / Удалить)
             if (m == master) or (m in ["Мастер 1", "Мастер 2"]):
-                if st.button(f"Удалить {s}–{e}", key=f"del_{sid}"):
-                    delete_shift(sid)
-                    st.rerun()
+                col_edit, col_del = st.columns(2)
+                with col_edit:
+                    if st.button("✏️ Редактировать", key=f"edit_{sid}"):
+                        st.session_state.edit_id = sid
+                        st.rerun()
+                with col_del:
+                    if st.button("🗑️ Удалить", key=f"del_{sid}"):
+                        delete_shift(sid)
+                        if st.session_state.edit_id == sid:
+                            st.session_state.edit_id = None
+                        st.rerun()
     st.divider()
