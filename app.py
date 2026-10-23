@@ -377,4 +377,6 @@ for i in range(7):
                         if st.session_state.edit_id == sid:
                             st.session_state.edit_id = None
                         st.rerun()
-    st.divider()
+    
+    # ЗАМЕНА СТАНДАРТНОГО РАЗДЕЛИТЕЛЯ НА РОЗОВЫЙ ПУНКТИР
+    st.markdown("<hr style='border: 1px dashed #FFB6C1; margin: 20px 0;'>", unsafe_allow_html=True)
