@@ -58,6 +58,17 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
+# ---------- ПРОВЕРКА ПЕРЕСЕЧЕНИЙ ----------
+def check_overlap(master, day, start, end):
+    """Проверяет, пересекается ли новая смена с уже существующими у ЭТОГО ЖЕ мастера"""
+    existing_shifts = get_shifts(day)
+    for _, m, _, s, e, _ in existing_shifts:
+        if m == master:
+            # Если начало новой смены раньше конца старой И конец новой позже начала старой
+            if (start < e) and (end > s):
+                return True, f"У вас уже есть смена с {s} до {e}. Смены не могут пересекаться."
+    return False, ""
+
 # ---------- СЛОТЫ 24Ч x 30МИН ----------
 def time_slots():
     slots = []
@@ -114,18 +125,21 @@ with st.expander("➕ Добавить смену", expanded=False):
         if start >= end:
             st.error("Время окончания должно быть позже начала")
         else:
-            add_shift(master, day_str, start, end, comment)
-            st.success("Смена добавлена!")
-            st.rerun()
+            # Проверяем на пересечение именно для этого мастера
+            has_overlap, msg = check_overlap(master, day_str, start, end)
+            if has_overlap:
+                st.error(msg)
+            else:
+                add_shift(master, day_str, start, end, comment)
+                st.success("Смена добавлена!")
+                st.rerun()
 
 # --- ЛИСТАНИЕ НЕДЕЛЬ И КАЛЕНДАРЬ ---
 st.subheader("📅 График на неделю")
 
-# Инициализация текущей недели в сессии, чтобы запоминать листание
 if "week_offset" not in st.session_state:
     st.session_state.week_offset = 0
 
-# Кнопки переключения недель
 col_prev, col_next = st.columns(2)
 with col_prev:
     if st.button("⬅️ Предыдущая неделя"):
@@ -136,17 +150,14 @@ with col_next:
         st.session_state.week_offset += 1
         st.rerun()
 
-# Вычисляем даты для отображаемой недели
 today = date.today()
 start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=st.session_state.week_offset)
 end_of_week = start_of_week + timedelta(days=6)
 
-# Показываем диапазон дат
 st.caption(f"Неделя: {start_of_week.strftime('%d.%m.%Y')} — {end_of_week.strftime('%d.%m.%Y')}")
 
 days_ru = {"Monday": "Пн", "Tuesday": "Вт", "Wednesday": "Ср", "Thursday": "Чт", "Friday": "Пт", "Saturday": "Сб", "Sunday": "Вс"}
 
-# Проходимся по 7 дням недели
 for i in range(7):
     current_day = start_of_week + timedelta(days=i)
     current_day_str = current_day.strftime("%Y-%m-%d")
@@ -165,16 +176,17 @@ for i in range(7):
     else:
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
+            # ИСПРАВЛЕНИЕ 1: Время теперь темно-серое (#333), чтобы было видно на белом фоне
             st.markdown(
                 f"""
-                <div style="border-left:6px solid {color}; padding:6px 10px; margin-bottom:6px; background:#f4f4f4; border-radius:4px;">
-                    <b style="color:{color};">{m}</b>: {s}–{e} 
-                    <span style="font-size:0.85em; color:#555;">{('(' + cm + ')') if cm else ''}</span>
+                <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#f4f4f4; border-radius:6px;">
+                    <b style="color:{color}; font-size:1.1em;">{m}</b><br>
+                    <span style="color:#333; font-weight:bold; font-size:1.05em;">{s}–{e}</span>
+                    <span style="color:#555; font-size:0.9em;">{(' (' + cm + ')') if cm else ''}</span>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            # Кнопка удаления только для своих смен
             if m == master:
                 if st.button(f"Удалить {s}–{e}", key=f"del_{sid}"):
                     delete_shift(sid)
