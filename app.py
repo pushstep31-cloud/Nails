@@ -86,7 +86,7 @@ st.markdown("""
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        border: 1px solid #FFB6C1 !important;
+        border: 2px solid #FF8DA1 !important; /* Более насыщенный розовый */
         font-weight: bold !important;
         border-radius: 8px !important;
     }
@@ -105,14 +105,14 @@ st.markdown("""
         background-color: #FFFFFF !important;
         color: #000000 !important;
         border-radius: 8px !important;
-        border: 1px solid #FFB6C1 !important;
+        border: 2px solid #FF8DA1 !important;
     }
     
     /* Гармошка */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        border: 1px solid #FFB6C1 !important;
+        border: 2px solid #FF8DA1 !important;
         border-radius: 8px !important;
     }
     div[data-testid="stExpander"] summary p { color: #000000 !important; font-weight: bold !important; }
@@ -128,7 +128,7 @@ st.markdown("""
     .time-cell {
         padding: 12px 0;
         text-align: center;
-        border: 1px solid #CCCCCC;
+        border: 2px solid #FF8DA1 !important;
         border-radius: 8px;
         background-color: white;
         color: black;
@@ -146,7 +146,7 @@ st.markdown("""
     div[data-testid="stAlert"] {
         background-color: rgba(46, 125, 50, 0.15) !important;
         color: #1B5E20 !important;
-        border: 1px solid #2E7D32 !important;
+        border: 2px solid #2E7D32 !important;
         border-radius: 8px !important;
     }
     div[data-testid="stAlert"] p { color: #1B5E20 !important; font-weight: bold !important; }
@@ -343,8 +343,9 @@ for i in range(7):
             unsafe_allow_html=True
         )
     else:
+        # Выделение дня теперь имеет такую же рамку, как и всё остальное (2px)
         st.markdown(
-            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#FFFFFF; color:#333333; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.1em; border: 1px solid #FFB6C1;">{day_title}</span></div>', 
+            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#FFFFFF; color:#333333; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.1em; border: 2px solid #FF8DA1;">{day_title}</span></div>', 
             unsafe_allow_html=True
         )
     
@@ -355,9 +356,10 @@ for i in range(7):
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
+            # Рамка вокруг карточки смены тоже стала такого же розового цвета (2px)
             st.markdown(
                 f"""
-                <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#FFFFFF; border-radius:6px; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
+                <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#FFFFFF; border-radius:6px; border-top: 2px solid #FF8DA1; border-right: 2px solid #FF8DA1; border-bottom: 2px solid #FF8DA1;">
                     <b style="color:{color}; font-size:1.1em;">{m}</b><br>
                     <span style="color:#333; font-weight:bold; font-size:1.05em;">{s}–{e}</span>
                     <span style="color:#555; font-size:0.9em;">{(' (' + cm + ')') if cm else ''}</span>
@@ -378,5 +380,5 @@ for i in range(7):
                             st.session_state.edit_id = None
                         st.rerun()
     
-    # ЗАМЕНА СТАНДАРТНОГО РАЗДЕЛИТЕЛЯ НА РОЗОВЫЙ ПУНКТИР
-    st.markdown("<hr style='border: 1px dashed #FFB6C1; margin: 20px 0;'>", unsafe_allow_html=True)
+    # Пунктирная линия разделения стала чуть насыщеннее и толще (2px)
+    st.markdown("<hr style='border: 2px dashed #FF8DA1; margin: 25px 0;'>", unsafe_allow_html=True)
