@@ -78,19 +78,35 @@ SLOTS = time_slots()
 # ---------- ИНТЕРФЕЙС ----------
 st.set_page_config(page_title="График мастеров", page_icon="💅", layout="centered")
 
-# Добавляем CSS-стили, чтобы сделать кнопки белыми
+# Добавляем CSS-стили для кнопок и гармошки (expander)
 st.markdown("""
     <style>
-    /* Делаем фон всех кнопок белым */
+    /* Белые кнопки */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
         border: 1px solid #CCCCCC !important;
         font-weight: bold !important;
     }
-    /* Эффект при нажатии (сделаем чуть серым, чтобы было видно клик) */
     .stButton > button:active, .stButton > button:focus {
         background-color: #E0E0E0 !important;
+    }
+    
+    /* Белая гармошка "Добавить смену" */
+    div[data-testid="stExpander"] summary {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border: 1px solid #CCCCCC !important;
+        border-radius: 8px !important;
+    }
+    /* Текст внутри гармошки (когда она открыта) */
+    div[data-testid="stExpander"] summary p {
+        color: #000000 !important;
+        font-weight: bold !important;
+    }
+    /* Иконка стрелочки внутри гармошки */
+    div[data-testid="stExpander"] summary svg {
+        fill: #000000 !important;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -175,7 +191,6 @@ today = date.today()
 start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=st.session_state.week_offset)
 end_of_week = start_of_week + timedelta(days=6)
 
-# Делаем надпись недели жирной, крупной и белой (чтобы выделялась)
 st.markdown(
     f"""
     <div style="text-align: center; margin-bottom: 20px;">
