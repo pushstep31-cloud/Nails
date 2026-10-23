@@ -8,8 +8,8 @@ PASSWORDS = {
     "Мастер 2": "2222",
 }
 COLORS = {
-    "Мастер 1": "#4A90D9",
-    "Мастер 2": "#D9534F",
+    "Мастер 1": "#4A90D9",  # синий
+    "Мастер 2": "#D9534F",  # красный
 }
 DB = "schedule.db"
 
@@ -75,6 +75,7 @@ init_db()
 
 st.title("💅 График мастеров")
 
+# --- Авторизация ---
 if "master" not in st.session_state:
     st.session_state.master = None
 
@@ -96,63 +97,86 @@ if st.button("Выйти"):
     st.session_state.master = None
     st.rerun()
 
-st.subheader("Выберите день")
-selected_day = st.date_input("Дата", value=date.today())
-day_str = selected_day.strftime("%Y-%m-%d")
-
-with st.expander("➕ Добавить смену", expanded=True):
+# --- Добавление смены (в свернутом блоке) ---
+with st.expander("➕ Добавить смену", expanded=False):
+    selected_day = st.date_input("Дата смены", value=date.today())
+    day_str = selected_day.strftime("%Y-%m-%d")
+    
     col1, col2 = st.columns(2)
     with col1:
-        start = st.selectbox("Начало", SLOTS, index=20)
+        start = st.selectbox("Начало", SLOTS, index=20)  # 10:00
     with col2:
-        end = st.selectbox("Конец", SLOTS, index=36)
+        end = st.selectbox("Конец", SLOTS, index=36)    # 18:00
+        
     comment = st.text_input("Комментарий (необязательно)", placeholder="Например: перерыв 14:00–14:30")
+    
     if st.button("Сохранить смену"):
         if start >= end:
             st.error("Время окончания должно быть позже начала")
         else:
             add_shift(master, day_str, start, end, comment)
-            st.success("Смена добавлена")
+            st.success("Смена добавлена!")
             st.rerun()
 
-st.subheader(f"Смены на {selected_day.strftime('%d.%m.%Y')}")
-shifts = get_shifts(day_str)
+# --- ЛИСТАНИЕ НЕДЕЛЬ И КАЛЕНДАРЬ ---
+st.subheader("📅 График на неделю")
 
-if not shifts:
-    st.info("На этот день смен пока нет")
-else:
-    for sid, m, d, s, e, cm in shifts:
-        color = COLORS.get(m, "#888")
-        st.markdown(
-            f"""
-            <div style="border-left:6px solid {color}; padding:8px 12px; margin-bottom:8px; background:#f7f7f7; border-radius:6px;">
-                <b style="color:{color};">{m}</b> — {s}–{e}<br>
-                <span style="font-size:0.9em;">{cm if cm else '—'}</span>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-        if m == master:
-            if st.button(f"Удалить смену {s}–{e}", key=f"del_{sid}"):
-                delete_shift(sid)
-                st.rerun()
+# Инициализация текущей недели в сессии, чтобы запоминать листание
+if "week_offset" not in st.session_state:
+    st.session_state.week_offset = 0
 
-st.subheader("Все смены (ближайшие 7 дней)")
+# Кнопки переключения недель
+col_prev, col_next = st.columns(2)
+with col_prev:
+    if st.button("⬅️ Предыдущая неделя"):
+        st.session_state.week_offset -= 1
+        st.rerun()
+with col_next:
+    if st.button("Следующая неделя ➡️"):
+        st.session_state.week_offset += 1
+        st.rerun()
+
+# Вычисляем даты для отображаемой недели
 today = date.today()
-week_later = today + timedelta(days=7)
-all_shifts = get_shifts()
-week_shifts = [x for x in all_shifts if today.strftime("%Y-%m-%d") <= x[2] <= week_later.strftime("%Y-%m-%d")]
+start_of_week = today - timedelta(days=today.weekday()) + timedelta(weeks=st.session_state.week_offset)
+end_of_week = start_of_week + timedelta(days=6)
 
-if not week_shifts:
-    st.info("На ближайшую неделю смен нет")
-else:
-    for sid, m, d, s, e, cm in week_shifts:
-        color = COLORS.get(m, "#888")
-        st.markdown(
-            f"""
-            <div style="border-left:6px solid {color}; padding:6px 12px; margin-bottom:6px; background:#fafafa; border-radius:6px;">
-                <b>{d}</b> — <span style="color:{color};">{m}</span>: {s}–{e} {('· ' + cm) if cm else ''}
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+# Показываем диапазон дат
+st.caption(f"Неделя: {start_of_week.strftime('%d.%m.%Y')} — {end_of_week.strftime('%d.%m.%Y')}")
+
+days_ru = {"Monday": "Пн", "Tuesday": "Вт", "Wednesday": "Ср", "Thursday": "Чт", "Friday": "Пт", "Saturday": "Сб", "Sunday": "Вс"}
+
+# Проходимся по 7 дням недели
+for i in range(7):
+    current_day = start_of_week + timedelta(days=i)
+    current_day_str = current_day.strftime("%Y-%m-%d")
+    
+    day_name = current_day.strftime("%A")
+    day_label = f"**{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}**"
+    
+    if current_day == today:
+        day_label = f"👉 **Сегодня, {current_day.strftime('%d.%m')}**"
+        
+    st.markdown(f"### {day_label}")
+    
+    day_shifts = get_shifts(current_day_str)
+    if not day_shifts:
+        st.caption("Выходной / Смен нет")
+    else:
+        for sid, m, d, s, e, cm in day_shifts:
+            color = COLORS.get(m, "#888")
+            st.markdown(
+                f"""
+                <div style="border-left:6px solid {color}; padding:6px 10px; margin-bottom:6px; background:#f4f4f4; border-radius:4px;">
+                    <b style="color:{color};">{m}</b>: {s}–{e} 
+                    <span style="font-size:0.85em; color:#555;">{('(' + cm + ')') if cm else ''}</span>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            # Кнопка удаления только для своих смен
+            if m == master:
+                if st.button(f"Удалить {s}–{e}", key=f"del_{sid}"):
+                    delete_shift(sid)
+                    st.rerun()
+    st.divider()
