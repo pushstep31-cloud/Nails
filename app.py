@@ -73,28 +73,54 @@ def check_overlap(day, start, end, exclude_id=None):
             return True, f"Пересечение: {m} уже работает с {s} до {e}."
     return False, ""
 
-# ---------- CSS СТИЛИ ----------
+# ---------- CSS СТИЛИ (ГЛОБАЛЬНЫЕ ИЗМЕНЕНИЯ) ----------
 st.markdown("""
     <style>
-    /* Обычные кнопки */
+    /* 1. Нежно-розовый фон всего приложения */
+    .stApp {
+        background-color: #FFF0F5 !important;
+    }
+    
+    /* 2. Черный текст для заголовков (чтобы было видно на розовом) */
+    h1, h2, h3, h4, p, span, div {
+        color: #333333;
+    }
+    
+    /* 3. Белые кнопки */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        border: 1px solid #CCCCCC !important;
+        border: 1px solid #FFB6C1 !important; /* Нежно-розовая рамка */
         font-weight: bold !important;
         border-radius: 8px !important;
     }
-    /* Гармошка */
+    
+    /* 4. Белые поля ввода и выбора (Selectbox) */
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stTextInput input, .stDateInput input {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border-radius: 8px !important;
+        border: 1px solid #FFB6C1 !important;
+    }
+    
+    /* Убираем красную рамку при клике на поле */
+    .stTextInput input:focus, .stDateInput input:focus {
+        border-color: #FF69B4 !important;
+        box-shadow: none !important;
+    }
+    
+    /* 5. Гармошка (Добавить смену) */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        border: 1px solid #CCCCCC !important;
+        border: 1px solid #FFB6C1 !important;
         border-radius: 8px !important;
     }
     div[data-testid="stExpander"] summary p { color: #000000 !important; font-weight: bold !important; }
     div[data-testid="stExpander"] summary svg { fill: #000000 !important; }
     
-    /* Зеленая кнопка сохранения */
+    /* 6. Зеленая кнопка сохранения */
     .stButton > button[kind="primary"] {
         background-color: #2E7D32 !important;
         color: white !important;
@@ -103,7 +129,7 @@ st.markdown("""
         font-size: 1.1em !important;
     }
     
-    /* Сетка времени */
+    /* 7. Сетка времени */
     .time-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -127,14 +153,7 @@ st.markdown("""
         color: #2E7D32;
     }
     
-    /* БЕЛЫЕ ПОЛЯ ВВОДА (Услуга и Дата) */
-    .stTextInput input, .stDateInput input {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border-radius: 8px !important;
-    }
-    
-    /* ЗЕЛЕНЫЕ ПЛАШКИ ВЫБОРА ВРЕМЕНИ (вместо синих) */
+    /* 8. ЗЕЛЕНЫЕ ПЛАШКИ ВЫБОРА ВРЕМЕНИ */
     div[data-testid="stAlert"] {
         background-color: #E8F5E9 !important;
         color: #2E7D32 !important;
@@ -144,6 +163,15 @@ st.markdown("""
     div[data-testid="stAlert"] p {
         color: #2E7D32 !important;
         font-weight: bold !important;
+    }
+    
+    /* 9. Стили для плашек дней и смен (чтобы не сливались с розовым) */
+    .day-box {
+        background-color: #FFFFFF;
+        padding: 8px 12px;
+        border-radius: 6px;
+        border-left: 6px solid #FFB6C1;
+        margin-bottom: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -231,7 +259,6 @@ with st.expander("➕ Добавить или изменить смену", expa
         st.query_params.pop("t_start")
         st.rerun()
 
-    # Используем st.success для зеленого цвета (вместо st.info)
     st.success(f"Выбрано начало: **{st.session_state.sel_start}**")
     st.write("---")
     
@@ -251,7 +278,6 @@ with st.expander("➕ Добавить или изменить смену", expa
         st.query_params.pop("t_end")
         st.rerun()
 
-    # Используем st.success для зеленого цвета
     st.success(f"Выбрано окончание: **{st.session_state.sel_end}**")
     st.write("---")
     
@@ -302,7 +328,7 @@ end_of_week = start_of_week + timedelta(days=6)
 st.markdown(
     f"""
     <div style="text-align: center; margin-bottom: 20px;">
-        <span style="font-size: 1.3em; font-weight: 800; color: #FFFFFF;">
+        <span style="font-size: 1.3em; font-weight: 800; color: #333333;">
             Неделя: {start_of_week.strftime('%d.%m.%Y')} — {end_of_week.strftime('%d.%m.%Y')}
         </span>
     </div>
@@ -317,6 +343,7 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
+    # Плашки дней (Сегодня - зеленая, остальные - белые)
     if current_day == today:
         st.markdown(
             f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#2E7D32; color:white; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.2em;">👉 Сегодня, {day_title}</span></div>', 
@@ -324,7 +351,7 @@ for i in range(7):
         )
     else:
         st.markdown(
-            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#E0E0E0; color:#333333; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.1em;">{day_title}</span></div>', 
+            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#FFFFFF; color:#333333; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.1em; border: 1px solid #FFB6C1;">{day_title}</span></div>', 
             unsafe_allow_html=True
         )
     
@@ -335,9 +362,11 @@ for i in range(7):
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
+            
+            # Сами смены тоже сделаем на белом фоне
             st.markdown(
                 f"""
-                <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#f4f4f4; border-radius:6px;">
+                <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#FFFFFF; border-radius:6px; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
                     <b style="color:{color}; font-size:1.1em;">{m}</b><br>
                     <span style="color:#333; font-weight:bold; font-size:1.05em;">{s}–{e}</span>
                     <span style="color:#555; font-size:0.9em;">{(' (' + cm + ')') if cm else ''}</span>
