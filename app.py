@@ -126,6 +126,25 @@ st.markdown("""
         border-color: #2E7D32;
         color: #2E7D32;
     }
+    
+    /* БЕЛЫЕ ПОЛЯ ВВОДА (Услуга и Дата) */
+    .stTextInput input, .stDateInput input {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+        border-radius: 8px !important;
+    }
+    
+    /* ЗЕЛЕНЫЕ ПЛАШКИ ВЫБОРА ВРЕМЕНИ (вместо синих) */
+    div[data-testid="stAlert"] {
+        background-color: #E8F5E9 !important;
+        color: #2E7D32 !important;
+        border: 1px solid #2E7D32 !important;
+        border-radius: 8px !important;
+    }
+    div[data-testid="stAlert"] p {
+        color: #2E7D32 !important;
+        font-weight: bold !important;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -199,7 +218,6 @@ with st.expander("➕ Добавить или изменить смену", expa
     # --- НАЧАЛО ---
     st.markdown("#### 🕒 Время начала")
     
-    # Генерируем сетку
     start_html = '<div class="time-grid">'
     for t in ALL_TIME_SLOTS:
         active_class = " active" if t == st.session_state.sel_start else ""
@@ -208,13 +226,13 @@ with st.expander("➕ Добавить или изменить смену", expa
     
     st.markdown(start_html, unsafe_allow_html=True)
     
-    # Обработка клика
     if "t_start" in st.query_params:
         st.session_state.sel_start = st.query_params["t_start"]
         st.query_params.pop("t_start")
         st.rerun()
 
-    st.info(f"Выбрано начало: **{st.session_state.sel_start}**")
+    # Используем st.success для зеленого цвета (вместо st.info)
+    st.success(f"Выбрано начало: **{st.session_state.sel_start}**")
     st.write("---")
     
     # --- КОНЕЦ ---
@@ -233,7 +251,8 @@ with st.expander("➕ Добавить или изменить смену", expa
         st.query_params.pop("t_end")
         st.rerun()
 
-    st.info(f"Выбрано окончание: **{st.session_state.sel_end}**")
+    # Используем st.success для зеленого цвета
+    st.success(f"Выбрано окончание: **{st.session_state.sel_end}**")
     st.write("---")
     
     # --- СОХРАНЕНИЕ ---
