@@ -76,17 +76,13 @@ def check_overlap(day, start, end, exclude_id=None):
 # ---------- CSS СТИЛИ ----------
 st.markdown("""
     <style>
-    /* 1. Нежно-розовый фон всего приложения */
-    .stApp {
-        background-color: #FFF0F5 !important;
-    }
+    /* Нежно-розовый фон */
+    .stApp { background-color: #FFF0F5 !important; }
     
-    /* 2. Общий текст */
-    h1, h2, h3, h4, p, span, div {
-        color: #333333;
-    }
+    /* Общий текст */
+    h1, h2, h3, h4, p, span, div { color: #333333; }
     
-    /* 3. Обычные кнопки */
+    /* Обычные кнопки (Выйти, недели и т.д.) */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -95,36 +91,7 @@ st.markdown("""
         border-radius: 8px !important;
     }
     
-    /* 4. Само поле Selectbox (где написано "Диана") */
-    div[data-baseweb="select"] > div {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border: 1px solid #FFB6C1 !important;
-        border-radius: 8px !important;
-    }
-    
-    /* 5. ГЛАВНОЕ ИСПРАВЛЕНИЕ: Выпадающий список (Popover) */
-    div[data-baseweb="popover"] div[data-baseweb="menu"] {
-        background-color: #FFFFFF !important;
-        border: 1px solid #FFB6C1 !important;
-    }
-    div[data-baseweb="popover"] ul {
-        background-color: #FFFFFF !important;
-    }
-    
-    /* Элементы списка (Диана, Настя) */
-    div[data-baseweb="popover"] li {
-        background-color: #FFFFFF !important;
-        color: #000000 !important;
-    }
-    
-    /* Наведение на элемент списка (подсветка) */
-    div[data-baseweb="popover"] li:hover {
-        background-color: #FCE4EC !important;
-        color: #000000 !important;
-    }
-
-    /* 6. Поля ввода текста и даты */
+    /* Поля ввода текста и даты */
     .stTextInput input, .stDateInput input {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -138,7 +105,7 @@ st.markdown("""
         box-shadow: none !important;
     }
     
-    /* 7. Гармошка */
+    /* Гармошка */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -148,7 +115,7 @@ st.markdown("""
     div[data-testid="stExpander"] summary p { color: #000000 !important; font-weight: bold !important; }
     div[data-testid="stExpander"] summary svg { fill: #000000 !important; }
     
-    /* 8. Кнопка сохранения */
+    /* Кнопка сохранения */
     .stButton > button[kind="primary"] {
         background-color: #2E7D32 !important;
         color: white !important;
@@ -157,7 +124,7 @@ st.markdown("""
         font-size: 1.1em !important;
     }
     
-    /* 9. Сетка времени */
+    /* Сетка времени */
     .time-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
@@ -181,17 +148,14 @@ st.markdown("""
         color: #2E7D32;
     }
     
-    /* 10. Зеленые плашки времени */
+    /* Зеленые плашки */
     div[data-testid="stAlert"] {
         background-color: #E8F5E9 !important;
         color: #2E7D32 !important;
         border: 1px solid #2E7D32 !important;
         border-radius: 8px !important;
     }
-    div[data-testid="stAlert"] p {
-        color: #2E7D32 !important;
-        font-weight: bold !important;
-    }
+    div[data-testid="stAlert"] p { color: #2E7D32 !important; font-weight: bold !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -208,12 +172,41 @@ if st.session_state.master is None and "user" in st.query_params:
 
 if st.session_state.master is None:
     st.subheader("Вход")
-    login = st.selectbox("Кто вы?", list(PASSWORDS.keys()))
+    st.write("**Кто вы?**")
+    
+    # Вместо выпадающего списка - две кнопки
+    col1, col2 = st.columns(2)
+    
+    # Инициализируем выбранного пользователя
+    if "login_choice" not in st.session_state:
+        st.session_state.login_choice = "Диана"
+        
+    with col1:
+        # Если Диана выбрана, кнопка зеленая, иначе белая
+        if st.session_state.login_choice == "Диана":
+            if st.button("Диана 👤", use_container_width=True, type="primary"):
+                pass # уже выбрана
+        else:
+            if st.button("Диана 👤", use_container_width=True):
+                st.session_state.login_choice = "Диана"
+                st.rerun()
+                
+    with col2:
+        if st.session_state.login_choice == "Настя":
+            if st.button("Настя 👤", use_container_width=True, type="primary"):
+                pass
+        else:
+            if st.button("Настя 👤", use_container_width=True):
+                st.session_state.login_choice = "Настя"
+                st.rerun()
+
+    # Поле пароля
     pwd = st.text_input("Пароль", type="password")
+    
     if st.button("Войти", use_container_width=True):
-        if PASSWORDS.get(login) == pwd:
-            st.session_state.master = login
-            st.query_params["user"] = login
+        if PASSWORDS.get(st.session_state.login_choice) == pwd:
+            st.session_state.master = st.session_state.login_choice
+            st.query_params["user"] = st.session_state.login_choice
             st.rerun()
         else:
             st.error("Неверный пароль")
