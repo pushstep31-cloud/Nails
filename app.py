@@ -58,15 +58,14 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
-# ---------- ПРОВЕРКА ПЕРЕСЕЧЕНИЙ ----------
-def check_overlap(master, day, start, end):
-    """Проверяет, пересекается ли новая смена с уже существующими у ЭТОГО ЖЕ мастера"""
+# ---------- ПРОВЕРКА ПЕРЕСЕЧЕНИЙ (ДЛЯ ВСЕХ МАСТЕРОВ) ----------
+def check_overlap(day, start, end):
+    """Проверяет, пересекается ли новая смена с ЛЮБЫМИ существующими в этот день"""
     existing_shifts = get_shifts(day)
     for _, m, _, s, e, _ in existing_shifts:
-        if m == master:
-            # Если начало новой смены раньше конца старой И конец новой позже начала старой
-            if (start < e) and (end > s):
-                return True, f"У вас уже есть смена с {s} до {e}. Смены не могут пересекаться."
+        # Если начало новой смены раньше конца старой И конец новой позже начала старой
+        if (start < e) and (end > s):
+            return True, f"Пересечение с графиком: {m} уже работает с {s} до {e}."
     return False, ""
 
 # ---------- СЛОТЫ 24Ч x 30МИН ----------
@@ -108,7 +107,7 @@ if st.button("Выйти"):
     st.session_state.master = None
     st.rerun()
 
-# --- Добавление смены (в свернутом блоке) ---
+# --- Добавление смены ---
 with st.expander("➕ Добавить смену", expanded=False):
     selected_day = st.date_input("Дата смены", value=date.today())
     day_str = selected_day.strftime("%Y-%m-%d")
@@ -125,8 +124,8 @@ with st.expander("➕ Добавить смену", expanded=False):
         if start >= end:
             st.error("Время окончания должно быть позже начала")
         else:
-            # Проверяем на пересечение именно для этого мастера
-            has_overlap, msg = check_overlap(master, day_str, start, end)
+            # Проверяем на пересечение со ВСЕМИ мастерами
+            has_overlap, msg = check_overlap(day_str, start, end)
             if has_overlap:
                 st.error(msg)
             else:
@@ -174,9 +173,11 @@ for i in range(7):
     if not day_shifts:
         st.caption("Выходной / Смен нет")
     else:
+        # Сортируем смены по времени начала, чтобы они не прыгали местами
+        day_shifts = sorted(day_shifts, key=lambda x: x[3])
+        
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
-            # ИСПРАВЛЕНИЕ 1: Время теперь темно-серое (#333), чтобы было видно на белом фоне
             st.markdown(
                 f"""
                 <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#f4f4f4; border-radius:6px;">
