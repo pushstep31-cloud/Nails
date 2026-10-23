@@ -73,83 +73,113 @@ def check_overlap(day, start, end, exclude_id=None):
             return True, f"Пересечение: {m} уже работает с {s} до {e}."
     return False, ""
 
-# ---------- CSS СТИЛИ ----------
+# ---------- CSS СТИЛИ (СОВРЕМЕННЫЙ ДИЗАЙН) ----------
 st.markdown("""
     <style>
-    /* Нежно-розовый фон */
-    .stApp { background-color: #FFF0F5 !important; }
+    /* 1. Подключаем современный шрифт */
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
     
-    /* Общий текст */
-    h1, h2, h3, h4, p, span, div { color: #333333; }
+    /* 2. Применяем шрифт и нежный фон */
+    html, body, [class*="css"] {
+        font-family: 'Montserrat', sans-serif !important;
+    }
+    .stApp { 
+        background-color: #FCF8F9 !important; /* Очень светлый, почти белый розовый */
+    }
     
-    /* Обычные белые кнопки */
+    /* 3. Текст */
+    h1, h2, h3, h4, p, span, div { 
+        color: #2C2C2C; 
+    }
+    
+    /* 4. Обычные белые кнопки (Выйти, недели) */
     .stButton > button {
         background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border: 2px solid #FF8DA1 !important;
-        font-weight: bold !important;
-        border-radius: 8px !important;
+        color: #2C2C2C !important;
+        border: none !important;
+        border-radius: 16px !important;
+        font-weight: 600 !important;
+        padding: 10px 20px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important; /* Мягкая тень */
+        transition: all 0.2s ease !important;
+    }
+    .stButton > button:hover {
+        box-shadow: 0 6px 16px rgba(0,0,0,0.08) !important;
+        transform: translateY(-2px);
     }
     
-    /* Прозрачная зеленая кнопка */
+    /* 5. Прозрачная зеленая кнопка (Выбранный мастер, Войти) */
     .stButton > button[kind="primary"] {
-        background-color: rgba(46, 125, 50, 0.15) !important;
+        background-color: #E8F5E9 !important;
         color: #1B5E20 !important;
-        border: 2px solid #2E7D32 !important;
-        font-weight: bold !important;
-        border-radius: 8px !important;
+        border: none !important;
+        box-shadow: inset 0 0 0 2px #A5D6A7 !important; /* Имитация рамки через тень */
+    }
+    .stButton > button[kind="primary"]:hover {
+        background-color: #C8E6C9 !important;
+        box-shadow: inset 0 0 0 2px #81C784 !important;
     }
     
-    /* Поля ввода */
+    /* 6. Поля ввода */
     .stTextInput input, .stDateInput input {
         background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border-radius: 8px !important;
-        border: 2px solid #FF8DA1 !important;
+        color: #2C2C2C !important;
+        border-radius: 16px !important;
+        border: none !important;
+        padding: 12px 16px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.04) !important;
     }
     
-    /* Гармошка */
+    /* 7. Гармошка (Добавить смену) */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
-        color: #000000 !important;
-        border: 2px solid #FF8DA1 !important;
-        border-radius: 8px !important;
+        color: #2C2C2C !important;
+        border: none !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
+        padding: 12px 16px !important;
     }
-    div[data-testid="stExpander"] summary p { color: #000000 !important; font-weight: bold !important; }
-    div[data-testid="stExpander"] summary svg { fill: #000000 !important; }
+    div[data-testid="stExpander"] summary p { font-weight: 600 !important; }
+    div[data-testid="stExpander"] summary svg { fill: #2C2C2C !important; }
     
-    /* Сетка времени */
+    /* 8. Сетка времени */
     .time-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 6px;
-        margin-bottom: 10px;
+        gap: 8px;
+        margin-bottom: 12px;
     }
     .time-cell {
-        padding: 12px 0;
+        padding: 14px 0;
         text-align: center;
-        border: 2px solid #FF8DA1 !important;
-        border-radius: 8px;
+        border: none;
+        border-radius: 12px;
         background-color: white;
-        color: black;
-        font-weight: bold;
+        color: #2C2C2C;
+        font-weight: 600;
         font-size: 0.95em;
         cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        transition: all 0.2s ease;
+    }
+    .time-cell:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
     .time-cell.active {
-        background-color: rgba(46, 125, 50, 0.15) !important;
-        border: 2px solid #2E7D32 !important;
+        background-color: #E8F5E9 !important;
         color: #1B5E20 !important;
+        box-shadow: inset 0 0 0 2px #A5D6A7 !important;
     }
     
-    /* Плашки времени */
+    /* 9. Плашки времени */
     div[data-testid="stAlert"] {
-        background-color: rgba(46, 125, 50, 0.15) !important;
+        background-color: #E8F5E9 !important;
         color: #1B5E20 !important;
-        border: 2px solid #2E7D32 !important;
-        border-radius: 8px !important;
+        border: none !important;
+        border-radius: 16px !important;
+        box-shadow: inset 0 0 0 2px #A5D6A7 !important;
     }
-    div[data-testid="stAlert"] p { color: #1B5E20 !important; font-weight: bold !important; }
+    div[data-testid="stAlert"] p { font-weight: 600 !important; }
     </style>
 """, unsafe_allow_html=True)
 
@@ -193,7 +223,7 @@ if st.session_state.master is None:
 
     pwd = st.text_input("Пароль", type="password")
     
-    if st.button("Войти", use_container_width=True):
+    if st.button("Войти", use_container_width=True, type="primary"):
         if PASSWORDS.get(st.session_state.login_choice) == pwd:
             st.session_state.master = st.session_state.login_choice
             st.query_params["user"] = st.session_state.login_choice
@@ -307,11 +337,11 @@ if "week_offset" not in st.session_state:
 
 col_prev, col_next = st.columns(2)
 with col_prev:
-    if st.button("⬅️ Предыдущая неделя"):
+    if st.button("⬅️ Назад"):
         st.session_state.week_offset -= 1
         st.rerun()
 with col_next:
-    if st.button("Следующая неделя ➡️"):
+    if st.button("Вперед ➡️"):
         st.session_state.week_offset += 1
         st.rerun()
 
@@ -321,8 +351,8 @@ end_of_week = start_of_week + timedelta(days=6)
 
 st.markdown(
     f"""
-    <div style="text-align: center; margin-bottom: 20px;">
-        <span style="font-size: 1.3em; font-weight: 800; color: #333333;">
+    <div style="text-align: center; margin-bottom: 24px;">
+        <span style="font-size: 1.3em; font-weight: 700; color: #2C2C2C;">
             Неделя: {start_of_week.strftime('%d.%m.%Y')} — {end_of_week.strftime('%d.%m.%Y')}
         </span>
     </div>
@@ -337,31 +367,33 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
-    # ОБНОВЛЕННАЯ ПЛАШКА "СЕГОДНЯ"
+    # Плашки дней (чипсы)
     if current_day == today:
         st.markdown(
-            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:rgba(46, 125, 50, 0.15); color:#1B5E20; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.2em; border: 2px solid #FF8DA1;">👉 Сегодня, {day_title}</span></div>', 
+            f'<div style="margin-top:24px; margin-bottom:12px;"><span style="background-color:#E8F5E9; color:#1B5E20; padding:8px 16px; border-radius:20px; font-weight:600; font-size:1.1em; box-shadow: inset 0 0 0 2px #A5D6A7;">👉 Сегодня, {day_title}</span></div>', 
             unsafe_allow_html=True
         )
     else:
         st.markdown(
-            f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#FFFFFF; color:#333333; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.1em; border: 2px solid #FF8DA1;">{day_title}</span></div>', 
+            f'<div style="margin-top:24px; margin-bottom:12px;"><span style="background-color:#FFFFFF; color:#2C2C2C; padding:8px 16px; border-radius:20px; font-weight:600; font-size:1em; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">{day_title}</span></div>', 
             unsafe_allow_html=True
         )
     
     day_shifts = get_shifts(current_day_str)
     if not day_shifts:
-        st.markdown("<span style='color:#888;'>Выходной / Смен нет</span>", unsafe_allow_html=True)
+        st.markdown("<span style='color:#999; font-size:0.9em; margin-left:8px;'>Выходной / Смен нет</span>", unsafe_allow_html=True)
     else:
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
+            
+            # Карточка смены с мягкой тенью
             st.markdown(
                 f"""
-                <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#FFFFFF; border-radius:6px; border-top: 2px solid #FF8DA1; border-right: 2px solid #FF8DA1; border-bottom: 2px solid #FF8DA1;">
+                <div style="padding:16px; margin-bottom:12px; background:#FFFFFF; border-radius:16px; box-shadow: 0 4px 16px rgba(0,0,0,0.06); border-left: 6px solid {color};">
                     <b style="color:{color}; font-size:1.1em;">{m}</b><br>
-                    <span style="color:#333; font-weight:bold; font-size:1.05em;">{s}–{e}</span>
-                    <span style="color:#555; font-size:0.9em;">{(' (' + cm + ')') if cm else ''}</span>
+                    <span style="color:#2C2C2C; font-weight:600; font-size:1.05em;">{s}–{e}</span>
+                    <span style="color:#777; font-size:0.9em;">{(' (' + cm + ')') if cm else ''}</span>
                 </div>
                 """, unsafe_allow_html=True
             )
@@ -369,7 +401,7 @@ for i in range(7):
             if (m == master) or (m in ["Мастер 1", "Мастер 2"]):
                 col_edit, col_del = st.columns(2)
                 with col_edit:
-                    if st.button("✏️ Редактировать", key=f"edit_{sid}", use_container_width=True):
+                    if st.button("✏️ Изменить", key=f"edit_{sid}", use_container_width=True):
                         st.session_state.edit_id = sid
                         st.rerun()
                 with col_del:
@@ -378,5 +410,3 @@ for i in range(7):
                         if st.session_state.edit_id == sid:
                             st.session_state.edit_id = None
                         st.rerun()
-    
-    st.markdown("<hr style='border: 2px dashed #FF8DA1; margin: 25px 0;'>", unsafe_allow_html=True)
