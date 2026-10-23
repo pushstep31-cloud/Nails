@@ -4,12 +4,12 @@ from datetime import date, datetime, timedelta
 
 # ---------- НАСТРОЙКИ ----------
 PASSWORDS = {
-    "Мастер 1": "1111",
-    "Мастер 2": "2222",
+    "Диана": "1111",
+    "Настя": "2222",
 }
 COLORS = {
-    "Мастер 1": "#4A90D9",  # синий
-    "Мастер 2": "#D9534F",  # красный
+    "Диана": "#4A90D9",  # синий
+    "Настя": "#D9534F",  # красный
 }
 DB = "schedule.db"
 
@@ -78,10 +78,9 @@ SLOTS = time_slots()
 # ---------- ИНТЕРФЕЙС ----------
 st.set_page_config(page_title="График мастеров", page_icon="💅", layout="centered")
 
-# Добавляем CSS-стили для кнопок и гармошки (expander)
+# CSS-стили для кнопок и гармошки
 st.markdown("""
     <style>
-    /* Белые кнопки */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -91,20 +90,16 @@ st.markdown("""
     .stButton > button:active, .stButton > button:focus {
         background-color: #E0E0E0 !important;
     }
-    
-    /* Белая гармошка "Добавить смену" */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
         border: 1px solid #CCCCCC !important;
         border-radius: 8px !important;
     }
-    /* Текст внутри гармошки (когда она открыта) */
     div[data-testid="stExpander"] summary p {
         color: #000000 !important;
         font-weight: bold !important;
     }
-    /* Иконка стрелочки внутри гармошки */
     div[data-testid="stExpander"] summary svg {
         fill: #000000 !important;
     }
@@ -126,7 +121,8 @@ if st.session_state.master is None and "user" in st.query_params:
 # --- АВТОРИЗАЦИЯ ---
 if st.session_state.master is None:
     st.subheader("Вход")
-    login = st.selectbox("Кто вы?", ["Мастер 1", "Мастер 2"])
+    # Имена теперь берутся автоматически из словаря PASSWORDS
+    login = st.selectbox("Кто вы?", list(PASSWORDS.keys()))
     pwd = st.text_input("Пароль", type="password")
     
     if st.button("Войти"):
