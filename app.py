@@ -58,6 +58,14 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
+# НОВАЯ ФУНКЦИЯ: Удаление старых записей
+def delete_old_records():
+    conn = sqlite3.connect(DB)
+    c = conn.cursor()
+    c.execute("DELETE FROM shifts WHERE master NOT IN ('Диана', 'Настя')")
+    conn.commit()
+    conn.close()
+
 def check_overlap(day, start, end):
     existing_shifts = get_shifts(day)
     for _, m, _, s, e, _ in existing_shifts:
@@ -78,7 +86,7 @@ SLOTS = time_slots()
 # ---------- ИНТЕРФЕЙС ----------
 st.set_page_config(page_title="График мастеров", page_icon="💅", layout="centered")
 
-# CSS-стили для кнопок и гармошки
+# CSS-стили
 st.markdown("""
     <style>
     .stButton > button {
@@ -121,7 +129,6 @@ if st.session_state.master is None and "user" in st.query_params:
 # --- АВТОРИЗАЦИЯ ---
 if st.session_state.master is None:
     st.subheader("Вход")
-    # Имена теперь берутся автоматически из словаря PASSWORDS
     login = st.selectbox("Кто вы?", list(PASSWORDS.keys()))
     pwd = st.text_input("Пароль", type="password")
     
@@ -247,8 +254,16 @@ for i in range(7):
                 """,
                 unsafe_allow_html=True,
             )
+            # Показываем кнопку "Удалить" ТОЛЬКО если имя смены совпадает с тем, кто вошел
             if m == master:
                 if st.button(f"Удалить {s}–{e}", key=f"del_{sid}"):
                     delete_shift(sid)
                     st.rerun()
     st.divider()
+
+# --- СЛУЖЕБНАЯ КНОПКА ДЛЯ ОЧИСТКИ СТАРЫХ ЗАПИСЕЙ ---
+st.write("---")
+if st.button("🧹 Удалить старые тестовые записи (Мастер 1 / Мастер 2)"):
+    delete_old_records()
+    st.success("Старые записи удалены!")
+    st.rerun()
