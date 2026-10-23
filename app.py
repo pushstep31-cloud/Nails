@@ -58,14 +58,6 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
-# НОВАЯ ФУНКЦИЯ: Удаление старых записей
-def delete_old_records():
-    conn = sqlite3.connect(DB)
-    c = conn.cursor()
-    c.execute("DELETE FROM shifts WHERE master NOT IN ('Диана', 'Настя')")
-    conn.commit()
-    conn.close()
-
 def check_overlap(day, start, end):
     existing_shifts = get_shifts(day)
     for _, m, _, s, e, _ in existing_shifts:
@@ -254,16 +246,13 @@ for i in range(7):
                 """,
                 unsafe_allow_html=True,
             )
-            # Показываем кнопку "Удалить" ТОЛЬКО если имя смены совпадает с тем, кто вошел
-            if m == master:
+            
+            # ЛОГИКА УДАЛЕНИЯ:
+            # 1. Если это твоя смена (имя совпадает)
+            # 2. ИЛИ если это старая смена (Мастер 1 / Мастер 2) — её может удалить кто угодно
+            if (m == master) or (m in ["Мастер 1", "Мастер 2"]):
                 if st.button(f"Удалить {s}–{e}", key=f"del_{sid}"):
                     delete_shift(sid)
                     st.rerun()
     st.divider()
-
-# --- СЛУЖЕБНАЯ КНОПКА ДЛЯ ОЧИСТКИ СТАРЫХ ЗАПИСЕЙ ---
-st.write("---")
-if st.button("🧹 Удалить старые тестовые записи (Мастер 1 / Мастер 2)"):
-    delete_old_records()
-    st.success("Старые записи удалены!")
-    st.rerun()
+    
