@@ -1,8 +1,6 @@
 import streamlit as st
 import sqlite3
 from datetime import date, datetime, timedelta
-
-# Подключаем компонент для сохранения входа в браузере
 import streamlit.components.v1 as components
 
 # ---------- НАСТРОЙКИ ----------
@@ -11,8 +9,8 @@ PASSWORDS = {
     "Мастер 2": "2222",
 }
 COLORS = {
-    "Мастер 1": "#4A90D9",  # синий
-    "Мастер 2": "#D9534F",  # красный
+    "Мастер 1": "#4A90D9",
+    "Мастер 2": "#D9534F",
 }
 DB = "schedule.db"
 
@@ -36,10 +34,8 @@ def init_db():
 def add_shift(master, day, start, end, comment):
     conn = sqlite3.connect(DB)
     c = conn.cursor()
-    c.execute(
-        "INSERT INTO shifts (master, day, start, end, comment) VALUES (?,?,?,?,?)",
-        (master, day, start, end, comment),
-    )
+    c.execute("INSERT INTO shifts (master, day, start, end, comment) VALUES (?,?,?,?,?)",
+              (master, day, start, end, comment))
     conn.commit()
     conn.close()
 
@@ -82,46 +78,48 @@ SLOTS = time_slots()
 st.set_page_config(page_title="График мастеров", page_icon="💅", layout="centered")
 init_db()
 
-# --- СОХРАНЕНИЕ СЕССИИ В БРАУЗЕРЕ (ЧТОБЫ НЕ ВЫКИДЫВАЛО) ---
-# Этот скрипт читает сохраненного пользователя из памяти браузера
-components.html(
+# --- ЧТЕНИЕ СЕССИИ ИЗ БРАУЗЕРА ---
+# Этот компонент отправляет сохраненное имя мастера обратно в Streamlit при загрузке
+saved_master = components.html(
     """
     <script>
-    const master = localStorage.getItem("master_login");
-    if (master) {
-        const streamlitDoc = window.parent.document;
-        // Ищем поле ввода и программно вводим туда имя мастера
-        // (Это костыль, но он работает в Streamlit)
-        const inputs = streamlitDoc.querySelectorAll('input[aria-label="Кто вы?"]');
-        if (inputs.length > 0 && inputs[0].value === "") {
-            // Мы не можем напрямую изменить selectbox, поэтому используем Streamlit API (если доступно)
-            // Вместо этого, мы просто сохраняем имя в URL, чтобы Streamlit его подхватил при перезагрузке
-        }
+    const saved = localStorage.getItem("master_login");
+    if (saved) {
+        // Отправляем данные в Streamlit (через костыль с изменением размера фрейма)
+        window.parent.postMessage({type: "streamlit:setComponentValue", value: saved}, "*");
     }
     </script>
     """,
     height=0,
 )
 
-# Более надежный способ: используем query_params в URL
-query_params = st.query_params
-if "user" in query_params and st.session_state.master is None:
-    st.session_state.master = query_params["user"]
+if "master" not in st.session_state:
+    st.session_state.master = None
+
+# Если в браузере есть сохраненный логин, применяем его
+if saved_master and st.session_state.master is None:
+    st.session_state.master = saved_master
 
 st.title("💅 График мастеров")
 
 # --- Авторизация ---
-if "master" not in st.session_state:
-    st.session_state.master = None
-
 if st.session_state.master is None:
     st.subheader("Вход")
     login = st.selectbox("Кто вы?", ["Мастер 1", "Мастер 2"])
     pwd = st.text_input("Пароль", type="password")
+    
     if st.button("Войти"):
         if PASSWORDS.get(login) == pwd:
             st.session_state.master = login
-            st.query_params["user"] = login  # Сохраняем в URL
+            # Сохраняем в память браузера
+            components.html(
+                f"""
+                <script>
+                localStorage.setItem("master_login", "{login}");
+                </script>
+                """,
+                height=0,
+            )
             st.rerun()
         else:
             st.error("Неверный пароль")
@@ -129,9 +127,18 @@ if st.session_state.master is None:
 
 master = st.session_state.master
 st.success(f"Вы вошли как **{master}**")
+
 if st.button("Выйти"):
     st.session_state.master = None
-    st.query_params.clear()  # Очищаем URL при выходе
+    # Очищаем память браузера
+    components.html(
+        """
+        <script>
+        localStorage.removeItem("master_login");
+        </script>
+        """,
+        height=0,
+    )
     st.rerun()
 
 # --- Добавление смены ---
@@ -190,7 +197,6 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
-    # ОФОРМЛЕНИЕ ДАТЫ (Используем строчный элемент span, чтобы плашка была по размеру текста)
     if current_day == today:
         st.markdown(
             f"""
@@ -199,8 +205,7 @@ for i in range(7):
                     👉 Сегодня, {day_title}
                 </span>
             </div>
-            """, 
-            unsafe_allow_html=True
+            """, unsafe_allow_html=True
         )
     else:
         st.markdown(
@@ -210,17 +215,14 @@ for i in range(7):
                     {day_title}
                 </span>
             </div>
-            """, 
-            unsafe_allow_html=True
+            """, unsafe_allow_html=True
         )
     
     day_shifts = get_shifts(current_day_str)
     if not day_shifts:
-        # Текст "Выходной" сделали светлее, чтобы был виден на темной теме
         st.markdown("<span style='color:#888;'>Выходной / Смен нет</span>", unsafe_allow_html=True)
     else:
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
-        
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
             st.markdown(
@@ -230,8 +232,7 @@ for i in range(7):
                     <span style="color:#333; font-weight:bold; font-size:1.05em;">{s}–{e}</span>
                     <span style="color:#555; font-size:0.9em;">{(' (' + cm + ')') if cm else ''}</span>
                 </div>
-                """,
-                unsafe_allow_html=True,
+                """, unsafe_allow_html=True
             )
             if m == master:
                 if st.button(f"Удалить {s}–{e}", key=f"del_{sid}"):
