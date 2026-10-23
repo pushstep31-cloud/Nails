@@ -76,6 +76,7 @@ def check_overlap(day, start, end, exclude_id=None):
 # ---------- CSS СТИЛИ ----------
 st.markdown("""
     <style>
+    /* Обычные кнопки */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -83,6 +84,7 @@ st.markdown("""
         font-weight: bold !important;
         border-radius: 8px !important;
     }
+    /* Гармошка */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -92,6 +94,7 @@ st.markdown("""
     div[data-testid="stExpander"] summary p { color: #000000 !important; font-weight: bold !important; }
     div[data-testid="stExpander"] summary svg { fill: #000000 !important; }
     
+    /* Зеленая кнопка сохранения */
     .stButton > button[kind="primary"] {
         background-color: #2E7D32 !important;
         color: white !important;
@@ -100,10 +103,11 @@ st.markdown("""
         font-size: 1.1em !important;
     }
     
+    /* Сетка времени */
     .time-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 8px;
+        gap: 6px;
         margin-bottom: 10px;
     }
     .time-cell {
@@ -114,7 +118,7 @@ st.markdown("""
         background-color: white;
         color: black;
         font-weight: bold;
-        font-size: 1.1em;
+        font-size: 0.95em;
         cursor: pointer;
     }
     .time-cell.active {
@@ -179,6 +183,13 @@ if st.session_state.edit_id:
 else:
     btn_text = "💾 Сохранить смену"
 
+# --- Генерация списка всех временных слотов (с 8:00 до 23:30) ---
+ALL_TIME_SLOTS = []
+for h in range(8, 24):
+    ALL_TIME_SLOTS.append(f"{h:02d}:00")
+    ALL_TIME_SLOTS.append(f"{h:02d}:30")
+
+
 # --- ДОБАВЛЕНИЕ / РЕДАКТИРОВАНИЕ ---
 with st.expander("➕ Добавить или изменить смену", expanded=(st.session_state.edit_id is not None)):
     
@@ -187,64 +198,42 @@ with st.expander("➕ Добавить или изменить смену", expa
     
     # --- НАЧАЛО ---
     st.markdown("#### 🕒 Время начала")
-    start_h, start_m = st.session_state.sel_start.split(":")
     
-    hours_html = '<div class="time-grid">'
-    # ИЗМЕНЕНИЕ ЗДЕСЬ: range(8, 24) вместо range(24)
-    for h in range(8, 24):
-        h_str = f"{h:02d}"
-        active_class = " active" if h_str == start_h else ""
-        hours_html += f'<a href="?h_start={h_str}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{h_str}</div></a>'
-    hours_html += '</div>'
-    st.markdown(hours_html, unsafe_allow_html=True)
+    # Генерируем сетку
+    start_html = '<div class="time-grid">'
+    for t in ALL_TIME_SLOTS:
+        active_class = " active" if t == st.session_state.sel_start else ""
+        start_html += f'<a href="?t_start={t}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{t}</div></a>'
+    start_html += '</div>'
     
-    if "h_start" in st.query_params:
-        new_h = st.query_params["h_start"]
-        st.session_state.sel_start = f"{new_h}:{start_m}"
-        st.query_params.pop("h_start")
+    st.markdown(start_html, unsafe_allow_html=True)
+    
+    # Обработка клика
+    if "t_start" in st.query_params:
+        st.session_state.sel_start = st.query_params["t_start"]
+        st.query_params.pop("t_start")
         st.rerun()
 
-    col_m1, col_m2 = st.columns(2)
-    if col_m1.button("00 мин", use_container_width=True, key="m_s_0"):
-        st.session_state.sel_start = f"{start_h}:00"
-        st.rerun()
-    if col_m2.button("30 мин", use_container_width=True, key="m_s_30"):
-        st.session_state.sel_start = f"{start_h}:30"
-        st.rerun()
-        
     st.info(f"Выбрано начало: **{st.session_state.sel_start}**")
-
     st.write("---")
     
     # --- КОНЕЦ ---
     st.markdown("#### 🕒 Время окончания")
-    end_h, end_m = st.session_state.sel_end.split(":")
     
-    hours_html_end = '<div class="time-grid">'
-    # ИЗМЕНЕНИЕ ЗДЕСЬ: range(8, 24) вместо range(24)
-    for h in range(8, 24):
-        h_str = f"{h:02d}"
-        active_class = " active" if h_str == end_h else ""
-        hours_html_end += f'<a href="?h_end={h_str}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{h_str}</div></a>'
-    hours_html_end += '</div>'
-    st.markdown(hours_html_end, unsafe_allow_html=True)
+    end_html = '<div class="time-grid">'
+    for t in ALL_TIME_SLOTS:
+        active_class = " active" if t == st.session_state.sel_end else ""
+        end_html += f'<a href="?t_end={t}" target="_self" style="text-decoration:none;"><div class="time-cell{active_class}">{t}</div></a>'
+    end_html += '</div>'
     
-    if "h_end" in st.query_params:
-        new_h = st.query_params["h_end"]
-        st.session_state.sel_end = f"{new_h}:{end_m}"
-        st.query_params.pop("h_end")
-        st.rerun()
-
-    col_em1, col_em2 = st.columns(2)
-    if col_em1.button("00 мин", use_container_width=True, key="m_e_0"):
-        st.session_state.sel_end = f"{end_h}:00"
-        st.rerun()
-    if col_em2.button("30 мин", use_container_width=True, key="m_e_30"):
-        st.session_state.sel_end = f"{end_h}:30"
+    st.markdown(end_html, unsafe_allow_html=True)
+    
+    if "t_end" in st.query_params:
+        st.session_state.sel_end = st.query_params["t_end"]
+        st.query_params.pop("t_end")
         st.rerun()
 
     st.info(f"Выбрано окончание: **{st.session_state.sel_end}**")
-
     st.write("---")
     
     # --- СОХРАНЕНИЕ ---
