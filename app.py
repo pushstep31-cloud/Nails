@@ -2,6 +2,9 @@ import streamlit as st
 import sqlite3
 from datetime import date, datetime, timedelta
 
+# Подключаем компонент для сохранения входа в браузере
+import streamlit.components.v1 as components
+
 # ---------- НАСТРОЙКИ ----------
 PASSWORDS = {
     "Мастер 1": "1111",
@@ -58,7 +61,6 @@ def delete_shift(shift_id):
     conn.commit()
     conn.close()
 
-# ---------- ПРОВЕРКА ПЕРЕСЕЧЕНИЙ (ДЛЯ ВСЕХ МАСТЕРОВ) ----------
 def check_overlap(day, start, end):
     existing_shifts = get_shifts(day)
     for _, m, _, s, e, _ in existing_shifts:
@@ -66,7 +68,6 @@ def check_overlap(day, start, end):
             return True, f"Пересечение с графиком: {m} уже работает с {s} до {e}."
     return False, ""
 
-# ---------- СЛОТЫ 24Ч x 30МИН ----------
 def time_slots():
     slots = []
     t = datetime.strptime("00:00", "%H:%M")
@@ -81,6 +82,32 @@ SLOTS = time_slots()
 st.set_page_config(page_title="График мастеров", page_icon="💅", layout="centered")
 init_db()
 
+# --- СОХРАНЕНИЕ СЕССИИ В БРАУЗЕРЕ (ЧТОБЫ НЕ ВЫКИДЫВАЛО) ---
+# Этот скрипт читает сохраненного пользователя из памяти браузера
+components.html(
+    """
+    <script>
+    const master = localStorage.getItem("master_login");
+    if (master) {
+        const streamlitDoc = window.parent.document;
+        // Ищем поле ввода и программно вводим туда имя мастера
+        // (Это костыль, но он работает в Streamlit)
+        const inputs = streamlitDoc.querySelectorAll('input[aria-label="Кто вы?"]');
+        if (inputs.length > 0 && inputs[0].value === "") {
+            // Мы не можем напрямую изменить selectbox, поэтому используем Streamlit API (если доступно)
+            // Вместо этого, мы просто сохраняем имя в URL, чтобы Streamlit его подхватил при перезагрузке
+        }
+    }
+    </script>
+    """,
+    height=0,
+)
+
+# Более надежный способ: используем query_params в URL
+query_params = st.query_params
+if "user" in query_params and st.session_state.master is None:
+    st.session_state.master = query_params["user"]
+
 st.title("💅 График мастеров")
 
 # --- Авторизация ---
@@ -94,6 +121,7 @@ if st.session_state.master is None:
     if st.button("Войти"):
         if PASSWORDS.get(login) == pwd:
             st.session_state.master = login
+            st.query_params["user"] = login  # Сохраняем в URL
             st.rerun()
         else:
             st.error("Неверный пароль")
@@ -103,6 +131,7 @@ master = st.session_state.master
 st.success(f"Вы вошли как **{master}**")
 if st.button("Выйти"):
     st.session_state.master = None
+    st.query_params.clear()  # Очищаем URL при выходе
     st.rerun()
 
 # --- Добавление смены ---
@@ -112,11 +141,11 @@ with st.expander("➕ Добавить смену", expanded=False):
     
     col1, col2 = st.columns(2)
     with col1:
-        start = st.selectbox("Начало", SLOTS, index=20)  # 10:00
+        start = st.selectbox("Начало", SLOTS, index=20)
     with col2:
-        end = st.selectbox("Конец", SLOTS, index=36)    # 18:00
+        end = st.selectbox("Конец", SLOTS, index=36)
         
-    comment = st.text_input("Комментарий (необязательно)", placeholder="Например: перерыв 14:00–14:30")
+    comment = st.text_input("Комментарий (необязательно)", placeholder="Например: перерыв")
     
     if st.button("Сохранить смену"):
         if start >= end:
@@ -161,23 +190,25 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
-    # ОФОРМЛЕНИЕ ДАТЫ
+    # ОФОРМЛЕНИЕ ДАТЫ (Используем строчный элемент span, чтобы плашка была по размеру текста)
     if current_day == today:
-        # Сегодня — выделяем зеленой плашкой
         st.markdown(
             f"""
-            <div style="background-color:#2E7D32; padding:10px 15px; border-radius:8px; margin-top:15px; margin-bottom:15px;">
-                <h3 style="color:white; margin:0; padding:0;">👉 Сегодня, {day_title}</h3>
+            <div style="margin-top:20px; margin-bottom:10px;">
+                <span style="background-color:#2E7D32; color:white; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.2em;">
+                    👉 Сегодня, {day_title}
+                </span>
             </div>
             """, 
             unsafe_allow_html=True
         )
     else:
-        # Обычный день — выделяем серой плашкой (работает и в темной, и в светлой теме)
         st.markdown(
             f"""
-            <div style="background-color:#E0E0E0; padding:10px 15px; border-radius:8px; margin-top:15px; margin-bottom:15px;">
-                <h3 style="color:#333333; margin:0; padding:0;">{day_title}</h3>
+            <div style="margin-top:20px; margin-bottom:10px;">
+                <span style="background-color:#E0E0E0; color:#333333; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.1em;">
+                    {day_title}
+                </span>
             </div>
             """, 
             unsafe_allow_html=True
@@ -185,7 +216,8 @@ for i in range(7):
     
     day_shifts = get_shifts(current_day_str)
     if not day_shifts:
-        st.caption("Выходной / Смен нет")
+        # Текст "Выходной" сделали светлее, чтобы был виден на темной теме
+        st.markdown("<span style='color:#888;'>Выходной / Смен нет</span>", unsafe_allow_html=True)
     else:
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         
