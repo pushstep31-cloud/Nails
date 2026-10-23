@@ -73,7 +73,7 @@ def check_overlap(day, start, end, exclude_id=None):
             return True, f"Пересечение: {m} уже работает с {s} до {e}."
     return False, ""
 
-# ---------- CSS СТИЛИ (ГЛОБАЛЬНЫЕ ИЗМЕНЕНИЯ) ----------
+# ---------- CSS СТИЛИ ----------
 st.markdown("""
     <style>
     /* 1. Нежно-розовый фон всего приложения */
@@ -81,21 +81,21 @@ st.markdown("""
         background-color: #FFF0F5 !important;
     }
     
-    /* 2. Черный текст для заголовков (чтобы было видно на розовом) */
+    /* 2. Текст (чтобы был виден на розовом) */
     h1, h2, h3, h4, p, span, div {
         color: #333333;
     }
     
-    /* 3. Белые кнопки */
+    /* 3. Кнопки */
     .stButton > button {
         background-color: #FFFFFF !important;
         color: #000000 !important;
-        border: 1px solid #FFB6C1 !important; /* Нежно-розовая рамка */
+        border: 1px solid #FFB6C1 !important;
         font-weight: bold !important;
         border-radius: 8px !important;
     }
     
-    /* 4. Белые поля ввода и выбора (Selectbox) */
+    /* 4. БЕЛЫЕ ПОЛЯ (Selectbox, Input, Date) */
     .stSelectbox div[data-baseweb="select"] > div,
     .stTextInput input, .stDateInput input {
         background-color: #FFFFFF !important;
@@ -104,13 +104,33 @@ st.markdown("""
         border: 1px solid #FFB6C1 !important;
     }
     
-    /* Убираем красную рамку при клике на поле */
+    /* ИСПРАВЛЕНИЕ ВЫПАДАЮЩЕГО СПИСКА (Dropdown) */
+    div[data-baseweb="popover"] {
+        background-color: #FFFFFF !important;
+    }
+    ul[data-testid="stSelectboxVirtualDropdown"] {
+        background-color: #FFFFFF !important;
+    }
+    li[role="option"] {
+        background-color: #FFFFFF !important;
+        color: #000000 !important;
+    }
+    li[role="option"]:hover {
+        background-color: #FCE4EC !important; /* Легкий розовый при наведении */
+        color: #000000 !important;
+    }
+    /* Текст выбранного элемента в выпадающем списке */
+    div[data-baseweb="popover"] div {
+        color: #000000 !important;
+    }
+
+    /* Убираем красную рамку при клике */
     .stTextInput input:focus, .stDateInput input:focus {
         border-color: #FF69B4 !important;
         box-shadow: none !important;
     }
     
-    /* 5. Гармошка (Добавить смену) */
+    /* 5. Гармошка */
     div[data-testid="stExpander"] summary {
         background-color: #FFFFFF !important;
         color: #000000 !important;
@@ -165,7 +185,7 @@ st.markdown("""
         font-weight: bold !important;
     }
     
-    /* 9. Стили для плашек дней и смен (чтобы не сливались с розовым) */
+    /* 9. Стили для карточек смен */
     .day-box {
         background-color: #FFFFFF;
         padding: 8px 12px;
@@ -343,7 +363,6 @@ for i in range(7):
     day_name = current_day.strftime("%A")
     day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
-    # Плашки дней (Сегодня - зеленая, остальные - белые)
     if current_day == today:
         st.markdown(
             f'<div style="margin-top:20px; margin-bottom:10px;"><span style="background-color:#2E7D32; color:white; padding:6px 12px; border-radius:6px; font-weight:bold; font-size:1.2em;">👉 Сегодня, {day_title}</span></div>', 
@@ -362,8 +381,6 @@ for i in range(7):
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         for sid, m, d, s, e, cm in day_shifts:
             color = COLORS.get(m, "#888")
-            
-            # Сами смены тоже сделаем на белом фоне
             st.markdown(
                 f"""
                 <div style="border-left:6px solid {color}; padding:8px 10px; margin-bottom:8px; background:#FFFFFF; border-radius:6px; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
