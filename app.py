@@ -60,10 +60,8 @@ def delete_shift(shift_id):
 
 # ---------- ПРОВЕРКА ПЕРЕСЕЧЕНИЙ (ДЛЯ ВСЕХ МАСТЕРОВ) ----------
 def check_overlap(day, start, end):
-    """Проверяет, пересекается ли новая смена с ЛЮБЫМИ существующими в этот день"""
     existing_shifts = get_shifts(day)
     for _, m, _, s, e, _ in existing_shifts:
-        # Если начало новой смены раньше конца старой И конец новой позже начала старой
         if (start < e) and (end > s):
             return True, f"Пересечение с графиком: {m} уже работает с {s} до {e}."
     return False, ""
@@ -124,7 +122,6 @@ with st.expander("➕ Добавить смену", expanded=False):
         if start >= end:
             st.error("Время окончания должно быть позже начала")
         else:
-            # Проверяем на пересечение со ВСЕМИ мастерами
             has_overlap, msg = check_overlap(day_str, start, end)
             if has_overlap:
                 st.error(msg)
@@ -162,18 +159,34 @@ for i in range(7):
     current_day_str = current_day.strftime("%Y-%m-%d")
     
     day_name = current_day.strftime("%A")
-    day_label = f"**{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}**"
+    day_title = f"{days_ru.get(day_name, '')}, {current_day.strftime('%d.%m')}"
     
+    # ОФОРМЛЕНИЕ ДАТЫ
     if current_day == today:
-        day_label = f"👉 **Сегодня, {current_day.strftime('%d.%m')}**"
-        
-    st.markdown(f"### {day_label}")
+        # Сегодня — выделяем зеленой плашкой
+        st.markdown(
+            f"""
+            <div style="background-color:#2E7D32; padding:10px 15px; border-radius:8px; margin-top:15px; margin-bottom:15px;">
+                <h3 style="color:white; margin:0; padding:0;">👉 Сегодня, {day_title}</h3>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
+    else:
+        # Обычный день — выделяем серой плашкой (работает и в темной, и в светлой теме)
+        st.markdown(
+            f"""
+            <div style="background-color:#E0E0E0; padding:10px 15px; border-radius:8px; margin-top:15px; margin-bottom:15px;">
+                <h3 style="color:#333333; margin:0; padding:0;">{day_title}</h3>
+            </div>
+            """, 
+            unsafe_allow_html=True
+        )
     
     day_shifts = get_shifts(current_day_str)
     if not day_shifts:
         st.caption("Выходной / Смен нет")
     else:
-        # Сортируем смены по времени начала, чтобы они не прыгали местами
         day_shifts = sorted(day_shifts, key=lambda x: x[3])
         
         for sid, m, d, s, e, cm in day_shifts:
